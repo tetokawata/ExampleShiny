@@ -1,1 +1,1 @@
-# ExampleShiny
+# Shinyを用いた例

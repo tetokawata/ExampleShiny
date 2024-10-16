@@ -13,16 +13,12 @@ ui <- fluidPage(
                   min = 1,
                   max = 50,
                   value = 30),
-      numericInput("d",
-                  "Degree:",
-                  min = 2,
-                  max = 10,
-                  value = 2),
       numericInput("i",
                   "ID:",
                   min = 1,
                   max = 100,
-                  value = 1)
+                  value = 1),
+      selectInput("method", label = "Method", choices = c("OLS","OLS with secondaly","OLS with 6th","LASSO","Random Forest"))
     ),
     
     # Show a plot of the generated distribution
@@ -45,48 +41,199 @@ server <- function(input, output) {
       )
 
     # draw the histogram with the specified number of bins
-    data |> 
-      dplyr::mutate(
-        Pred = lm(
-          Y ~ poly(X,input$d), 
-          data = dplyr::pick(dplyr::everything())) |> 
-          predict(dplyr::pick(dplyr::everything()))
-      ) |> 
-      ggplot2::ggplot(
-        ggplot2::aes(
-          x = X,
-          y = Y
+    # 
+    
+    if(input$method == "OLS with secondaly"){
+      data |> 
+        dplyr::mutate(
+          Pred = lm(
+            Y ~ poly(X,2), 
+            data = dplyr::pick(dplyr::everything())) |> 
+            predict(dplyr::pick(dplyr::everything()))
+        ) |> 
+        ggplot2::ggplot(
+          ggplot2::aes(
+            x = X,
+            y = Y
+          )
+        ) +
+        ggplot2::theme_bw() +
+        ggplot2::geom_point(
+          alpha = 0.2
+        ) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = Pred,
+            color = "Prediction"
+          ),
+          se = FALSE
+        ) +
+        ggplot2::xlim(0,1) +
+        ggplot2::ylim(-1,2) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = True,
+            color = "Population"
+          ),
+          method = "lm",
+          formula = y ~ poly(x,2),
+          se = FALSE
         )
-      ) +
-      ggplot2::theme_bw() +
-      ggplot2::geom_point() +
-      ggplot2::geom_smooth(
-        ggplot2::aes(
-          y = Pred,
-          color = "y ~ poly(x,d)"
-        ),
-        se = FALSE
-      ) +
-      ggplot2::geom_smooth(
-        method = "lm",
-        se = FALSE,
-        ggplot2::aes(
-          color = "y ~ x"
+    }
+    else if(input$method == "OLS"){
+      data |> 
+        dplyr::mutate(
+          Pred = lm(
+            Y ~ X, 
+            data = dplyr::pick(dplyr::everything())) |> 
+            predict(dplyr::pick(dplyr::everything()))
+        ) |> 
+        ggplot2::ggplot(
+          ggplot2::aes(
+            x = X,
+            y = Y
+          )
+        ) +
+        ggplot2::theme_bw() +
+        ggplot2::geom_point(
+          alpha = 0.2
+        ) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = Pred,
+            color = "Prediction"
+          ),
+          se = FALSE
+        ) +
+        ggplot2::xlim(0,1) +
+        ggplot2::ylim(-1,2) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = True,
+            color = "Population"
+          ),
+          method = "lm",
+          formula = y ~ poly(x,2),
+          se = FALSE
         )
-      ) +
-      ggplot2::xlim(0,1) +
-      ggplot2::ylim(-1,2) +
-      ggplot2::geom_smooth(
-        ggplot2::aes(
-          y = True,
-          color = "Population"
-        ),
-        method = "lm",
-        formula = y ~ poly(x,2),
-        se = FALSE
-      )
-  })
-}
+    }
+    else if(input$method == "OLS with 6th"){
+      data |> 
+        dplyr::mutate(
+          Pred = lm(
+            Y ~ poly(X,6), 
+            data = dplyr::pick(dplyr::everything())) |> 
+            predict(dplyr::pick(dplyr::everything()))
+        ) |> 
+        ggplot2::ggplot(
+          ggplot2::aes(
+            x = X,
+            y = Y
+          )
+        ) +
+        ggplot2::theme_bw() +
+        ggplot2::geom_point(
+          alpha = 0.2
+        ) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = Pred,
+            color = "Prediction"
+          ),
+          se = FALSE
+        ) +
+        ggplot2::xlim(0,1) +
+        ggplot2::ylim(-1,2) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = True,
+            color = "Population"
+          ),
+          method = "lm",
+          formula = y ~ poly(x,2),
+          se = FALSE
+        )
+    }
+    else if(input$method == "LASSO"){
+      data |> 
+        dplyr::mutate(
+          Pred = hdm::rlasso(
+            Y ~ poly(X,6), 
+            data = dplyr::pick(dplyr::everything()),
+            post = FALSE) |> 
+            predict(dplyr::pick(dplyr::everything())) |> 
+            as.numeric()
+        ) |> 
+        ggplot2::ggplot(
+          ggplot2::aes(
+            x = X,
+            y = Y
+          )
+        ) +
+        ggplot2::theme_bw() +
+        ggplot2::geom_point(
+          alpha = 0.2
+        ) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = Pred,
+            color = "Prediction"
+          ),
+          se = FALSE
+        ) +
+        ggplot2::xlim(0,1) +
+        ggplot2::ylim(-1,2) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = True,
+            color = "Population"
+          ),
+          method = "lm",
+          formula = y ~ poly(x,2),
+          se = FALSE
+        )
+    }
+    else if(input$method == "Random Forest"){
+      data |> 
+        dplyr::mutate(
+          Pred = ranger::ranger(
+            Y ~ X, 
+            data = dplyr::pick(dplyr::everything())) |> 
+            predict(dplyr::pick(dplyr::everything())) |> 
+            magrittr::extract2("predictions") |> 
+            as.numeric()
+        ) |> 
+        ggplot2::ggplot(
+          ggplot2::aes(
+            x = X,
+            y = Y
+          )
+        ) +
+        ggplot2::theme_bw() +
+        ggplot2::geom_point(
+          alpha = 0.2
+        ) +
+        ggplot2::geom_line(
+          ggplot2::aes(
+            y = Pred,
+            color = "Prediction"
+          )
+        ) +
+        ggplot2::xlim(0,1) +
+        ggplot2::ylim(-1,2) +
+        ggplot2::geom_smooth(
+          ggplot2::aes(
+            y = True,
+            color = "Population"
+          ),
+          method = "lm",
+          formula = y ~ poly(x,2),
+          se = FALSE
+        )
+    }
+    }
+    )
+  }
 
 # Run the application 
 shinyApp(ui = ui, server = server)
